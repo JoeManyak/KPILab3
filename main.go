@@ -8,7 +8,12 @@ import (
 )
 
 func main() {
-	f, err := os.Open("input.txt")
+	inpMap := readPathFromFile("input.txt")
+	showPath(inpMap)
+}
+
+func readPathFromFile(filename string) [][]string {
+	f, err := os.Open(filename)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -19,6 +24,10 @@ func main() {
 		text := scanner.Text()
 		inpMap = append(inpMap, strings.Split(text, ""))
 	}
+	return inpMap
+}
+
+func showPath(inpMap [][]string) {
 	for i := range inpMap {
 		for j := range inpMap[i] {
 			fmt.Printf("%2s", inpMap[i][j])
