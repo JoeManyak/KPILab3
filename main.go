@@ -10,8 +10,16 @@ import (
 func main() {
 	inpMap := readPathFromFile("input.txt")
 	showPath(inpMap)
+	pathFinder(inpMap, 1, 1, 2, 2)
 }
 
+// x1,y1 — start of path
+// x2,y2 — end of path
+func pathFinder(inpMap [][]string, x1, y1, x2, y2 int) {
+	if inpMap[x1][y1] == "X" || inpMap[x2][y2] == "X" {
+		panic("Not Valid start")
+	}
+}
 func readPathFromFile(filename string) [][]string {
 	f, err := os.Open(filename)
 	if err != nil {
