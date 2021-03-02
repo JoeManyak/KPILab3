@@ -13,7 +13,7 @@ type cell struct {
 	thisY       int
 	parentX     int
 	parentY     int
-	parent      *cell
+	parent      int
 	parentsCost float64
 	fullCost    float64
 	roadCost    float64
@@ -36,14 +36,14 @@ func (c *cell) roadCostCalculate() {
 func main() {
 	inpMap := readPathFromFile("input.txt")
 	showPath(inpMap)
-	c := pathFinder(inpMap, 1, 1, 3, 6)
-	returner(c)
+	pathFinder(inpMap, 1, 1, 3, 6)
 }
 
-func returner(c cell) {
+func returner(c cell, closedList []cell) {
 	fmt.Println(c.thisX, c.thisY)
-	if c.parent != nil {
-		returner(*c.parent)
+	if c.parent != -1 {
+		returner(closedList[c.parent], closedList)
+		return
 	}
 }
 
@@ -53,6 +53,7 @@ func initCell(x, y int) cell {
 	c.thisY = y
 	c.parentX = -1
 	c.parentY = -1
+	c.parent = -1
 	c.parentsCost = 0
 	c.fullCost = 0
 	return c
@@ -61,7 +62,7 @@ func initCell(x, y int) cell {
 // x1,y1 — start of path
 // x2,y2 — end of path
 
-func pathFinder(inpMap [][]string, startX, startY, aimX, aimY int) cell {
+func pathFinder(inpMap [][]string, startX, startY, aimX, aimY int) {
 	c := initCell(startX, startY)
 	openList := make([]cell, 0, 0)
 	closedList := make([]cell, 0, 0)
@@ -69,16 +70,16 @@ func pathFinder(inpMap [][]string, startX, startY, aimX, aimY int) cell {
 	for {
 		selected := getCheapestCell(openList)
 		if checkIfSuccess(selected.thisX, selected.thisY, aimX, aimY) {
-			return selected
+			fmt.Println(aimX, aimY)
+			returner(selected, closedList)
+			return
 		}
 		openList = deleteCellFromSlice(openList, findIndexOfCell(selected, openList))
 		closedList = append(closedList, selected)
-		a := &closedList[len(closedList)-1]
-		fmt.Println(">>>", a)
-		for _, v := range getNotClosedNeighbors(a, closedList, openList, inpMap, aimX, aimY) {
+		for _, v := range getNotClosedNeighbors(closedList[len(closedList)-1], closedList, openList, inpMap, aimX, aimY) {
 			temp := math.Sqrt(float64(toSquare(v.thisX-c.thisX) + toSquare(v.thisY-c.thisY)))
 			if findIndexOfCell(v, openList) == -1 || temp < v.roadCost {
-				v.parent = &c
+				v.parent = len(closedList) - 1
 				v.roadCost = temp
 				v.calculateTotalCost(aimX, aimY)
 				if findIndexOfCell(v, openList) == -1 {
@@ -89,19 +90,6 @@ func pathFinder(inpMap [][]string, startX, startY, aimX, aimY int) cell {
 	}
 	//return openList,closedList, "HORRAY"
 }
-
-//debug
-func d(c []cell, str string) {
-	fmt.Println("````````````````````")
-	fmt.Println(str, len(c))
-	fmt.Println("````````````````````")
-	for i := range c {
-		fmt.Println(c[i])
-	}
-	fmt.Println("````````````````````")
-}
-
-//debug
 func findIndexOfCell(c cell, cArr []cell) int {
 	for i := range cArr {
 		//if c == cArr[i] {
@@ -120,7 +108,7 @@ func deleteCellFromSlice(c []cell, i int) []cell {
 	return c
 }
 
-func getNotClosedNeighbors(c *cell, closedList, openList []cell, initMap [][]string, aimX, aimY int) []cell {
+func getNotClosedNeighbors(c cell, closedList, openList []cell, initMap [][]string, aimX, aimY int) []cell {
 	cellArr := make([]cell, 0, 0)
 	for i := c.thisX - 1; i < c.thisX+2; i++ {
 		for j := c.thisY - 1; j < c.thisY+2; j++ {
@@ -143,13 +131,12 @@ func getNotClosedNeighbors(c *cell, closedList, openList []cell, initMap [][]str
 					}
 				}
 				if b {
-					fmt.Println(c)
 					cellArr = append(cellArr, cell{
 						thisX:       i,
 						thisY:       j,
 						parentX:     c.thisX,
 						parentY:     c.thisY,
-						parent:      c,
+						parent:      len(closedList) - 1,
 						parentsCost: c.fullCost,
 					})
 					cellArr[len(cellArr)-1].roadCostCalculate()
