@@ -19,13 +19,24 @@ type cell struct {
 	roadCost    float64
 }
 
+func main() {
+	inpMap := readPathFromFile("input.txt")
+	showPath(inpMap)
+	b := pathFinder(inpMap, 1, 1, 8, 1)
+	if b {
+		fmt.Println("Road built successfully!")
+	} else {
+		fmt.Println("No way to aim!")
+	}
+}
+
 func toSquare(a int) int {
 	return a * a
 }
 
 func (c *cell) calculateTotalCost(aimX, aimY int) {
 	costToAim := math.Sqrt(float64(toSquare(aimX-c.thisX) + toSquare(aimY-c.thisY)))
-	c.fullCost = c.roadCost + costToAim
+	c.fullCost = c.roadCost + costToAim*5
 }
 
 func (c *cell) roadCostCalculate() {
@@ -33,18 +44,15 @@ func (c *cell) roadCostCalculate() {
 	c.roadCost = costToNeighbor + c.parentsCost
 }
 
-func main() {
-	inpMap := readPathFromFile("input.txt")
-	showPath(inpMap)
-	pathFinder(inpMap, 1, 1, 3, 6)
-}
-
-func returner(c cell, closedList []cell) {
+func returner(c cell, closedList []cell, inpMap [][]string) {
 	fmt.Println(c.thisX, c.thisY)
+	inpMap[c.thisX][c.thisY] = "*"
 	if c.parent != -1 {
-		returner(closedList[c.parent], closedList)
+		returner(closedList[c.parent], closedList, inpMap)
 		return
 	}
+	showPath(inpMap)
+	return
 }
 
 func initCell(x, y int) cell {
@@ -62,17 +70,20 @@ func initCell(x, y int) cell {
 // x1,y1 — start of path
 // x2,y2 — end of path
 
-func pathFinder(inpMap [][]string, startX, startY, aimX, aimY int) {
+func pathFinder(inpMap [][]string, startX, startY, aimX, aimY int) bool {
 	c := initCell(startX, startY)
 	openList := make([]cell, 0, 0)
 	closedList := make([]cell, 0, 0)
 	openList = append(openList, c)
 	for {
-		selected := getCheapestCell(openList)
+		selected, b := getCheapestCell(openList)
+		if b {
+			return false
+		}
 		if checkIfSuccess(selected.thisX, selected.thisY, aimX, aimY) {
-			fmt.Println(aimX, aimY)
-			returner(selected, closedList)
-			return
+			inpMap[aimX][aimY] = "*"
+			returner(selected, closedList, inpMap)
+			return true
 		}
 		openList = deleteCellFromSlice(openList, findIndexOfCell(selected, openList))
 		closedList = append(closedList, selected)
@@ -110,12 +121,12 @@ func deleteCellFromSlice(c []cell, i int) []cell {
 
 func getNotClosedNeighbors(c cell, closedList, openList []cell, initMap [][]string, aimX, aimY int) []cell {
 	cellArr := make([]cell, 0, 0)
-	for i := c.thisX - 1; i < c.thisX+2; i++ {
-		for j := c.thisY - 1; j < c.thisY+2; j++ {
+	for i := c.thisX - 1; i < c.thisX+2 && i < len(initMap); i++ {
+		for j := c.thisY - 1; j < c.thisY+2 && j < len(initMap[i]); j++ {
 			if i == 1 && j == 1 {
 				continue
 			}
-			if initMap[i][j] != "X" {
+			if initMap[i][j] != "X" { //Англійська X
 				var b = true
 				for item := range closedList {
 					if closedList[item].thisX == i && closedList[item].thisY == j {
@@ -152,9 +163,9 @@ func checkIfSuccess(x1, y1, x2, y2 int) bool {
 	return (math.Abs(float64(x1-x2)) <= 1) && (math.Abs(float64(y1-y2)) <= 1)
 }
 
-func getCheapestCell(openList []cell) cell {
+func getCheapestCell(openList []cell) (cell, bool) {
 	if len(openList) == 0 {
-		panic("Empty open list!")
+		return cell{}, true
 	}
 	var minCell = openList[0]
 	for i := range openList {
@@ -162,7 +173,7 @@ func getCheapestCell(openList []cell) cell {
 			minCell = openList[i]
 		}
 	}
-	return minCell
+	return minCell, false
 }
 
 func readPathFromFile(filename string) [][]string {
