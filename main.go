@@ -6,6 +6,7 @@ import (
 	"math"
 	"os"
 	"strings"
+	"time"
 )
 
 type cell struct {
@@ -60,10 +61,11 @@ func pathFinder(inpMap [][]string, startX, startY, aimX, aimY int) ([]cell, []ce
 	openList = append(openList, c)
 	for {
 		selected := getCheapestCell(openList)
+		fmt.Println(selected)
 		if checkIfSuccess(selected.thisX, selected.thisY, aimX, aimY) {
 			return openList, closedList, "FAILURE"
 		}
-		deleteCellFromSlice(openList, findIndexOfCell(selected, openList))
+		openList = deleteCellFromSlice(openList, findIndexOfCell(selected, openList))
 		closedList = append(closedList, selected)
 		for _, v := range getNotClosedNeighbors(&selected, closedList, openList, inpMap, aimX, aimY) {
 			temp := math.Sqrt(float64(toSquare(v.thisX-c.thisX) + toSquare(v.thisY-c.thisY)))
@@ -76,6 +78,7 @@ func pathFinder(inpMap [][]string, startX, startY, aimX, aimY int) ([]cell, []ce
 				}
 			}
 		}
+		time.Sleep(time.Millisecond * 500)
 	}
 	//return openList,closedList, "HORRAY"
 }
