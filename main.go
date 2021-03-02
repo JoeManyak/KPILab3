@@ -6,7 +6,6 @@ import (
 	"math"
 	"os"
 	"strings"
-	"time"
 )
 
 type cell struct {
@@ -37,7 +36,15 @@ func (c *cell) roadCostCalculate() {
 func main() {
 	inpMap := readPathFromFile("input.txt")
 	showPath(inpMap)
-	pathFinder(inpMap, 1, 1, 3, 6)
+	c := pathFinder(inpMap, 1, 1, 3, 6)
+	returner(c)
+}
+
+func returner(c cell) {
+	fmt.Println(c.thisX, c.thisY)
+	if c.parent != nil {
+		returner(*c.parent)
+	}
 }
 
 func initCell(x, y int) cell {
@@ -54,38 +61,51 @@ func initCell(x, y int) cell {
 // x1,y1 — start of path
 // x2,y2 — end of path
 
-func pathFinder(inpMap [][]string, startX, startY, aimX, aimY int) ([]cell, []cell, string) {
+func pathFinder(inpMap [][]string, startX, startY, aimX, aimY int) cell {
 	c := initCell(startX, startY)
 	openList := make([]cell, 0, 0)
 	closedList := make([]cell, 0, 0)
 	openList = append(openList, c)
 	for {
 		selected := getCheapestCell(openList)
-		fmt.Println(selected)
 		if checkIfSuccess(selected.thisX, selected.thisY, aimX, aimY) {
-			return openList, closedList, "FAILURE"
+			return selected
 		}
 		openList = deleteCellFromSlice(openList, findIndexOfCell(selected, openList))
 		closedList = append(closedList, selected)
-		for _, v := range getNotClosedNeighbors(&selected, closedList, openList, inpMap, aimX, aimY) {
+		a := &closedList[len(closedList)-1]
+		fmt.Println(">>>", a)
+		for _, v := range getNotClosedNeighbors(a, closedList, openList, inpMap, aimX, aimY) {
 			temp := math.Sqrt(float64(toSquare(v.thisX-c.thisX) + toSquare(v.thisY-c.thisY)))
-			if findIndexOfCell(c, openList) == -1 || temp < v.roadCost {
+			if findIndexOfCell(v, openList) == -1 || temp < v.roadCost {
 				v.parent = &c
 				v.roadCost = temp
 				v.calculateTotalCost(aimX, aimY)
-				if findIndexOfCell(c, openList) == -1 {
+				if findIndexOfCell(v, openList) == -1 {
 					openList = append(openList, v)
 				}
 			}
 		}
-		time.Sleep(time.Millisecond * 500)
 	}
 	//return openList,closedList, "HORRAY"
 }
 
+//debug
+func d(c []cell, str string) {
+	fmt.Println("````````````````````")
+	fmt.Println(str, len(c))
+	fmt.Println("````````````````````")
+	for i := range c {
+		fmt.Println(c[i])
+	}
+	fmt.Println("````````````````````")
+}
+
+//debug
 func findIndexOfCell(c cell, cArr []cell) int {
 	for i := range cArr {
-		if c == cArr[i] {
+		//if c == cArr[i] {
+		if c.thisX == cArr[i].thisX && c.thisY == cArr[i].thisY {
 			return i
 		}
 	}
@@ -123,6 +143,7 @@ func getNotClosedNeighbors(c *cell, closedList, openList []cell, initMap [][]str
 					}
 				}
 				if b {
+					fmt.Println(c)
 					cellArr = append(cellArr, cell{
 						thisX:       i,
 						thisY:       j,
