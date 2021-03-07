@@ -19,6 +19,23 @@ type cell struct {
 	roadCost    float64
 }
 
+type queue struct {
+	el []string
+}
+
+func (q *queue) addOne(str string) {
+	temp := make([]string, len(q.el)+1, len(q.el)+1)
+	temp[0] = str
+	copy(temp[1:], q.el[0:])
+	q.el = temp
+}
+
+func (q *queue) takeNext() string {
+	str := q.el[len(q.el)-1]
+	q.el = q.el[:len(q.el)-1]
+	return str
+}
+
 func main() {
 	inpMap := readPathFromFile("input.txt")
 	showPath(inpMap)
@@ -28,6 +45,20 @@ func main() {
 	} else {
 		fmt.Println("No way to aim!")
 	}
+}
+
+func queueGenerate() queue {
+	var q queue
+	for i := 49; i < 58; i++ {
+		q.addOne(string(i))
+	}
+	for i := 97; i < 123; i++ {
+		q.addOne(string(i))
+	}
+	for i := 65; i < 91; i++ {
+		q.addOne(string(i))
+	}
+	return q
 }
 
 func toSquare(a int) int {
@@ -44,11 +75,10 @@ func (c *cell) roadCostCalculate() {
 	c.roadCost = costToNeighbor + c.parentsCost
 }
 
-func returner(c cell, closedList []cell, inpMap [][]string) {
-	fmt.Println(c.thisX, c.thisY)
-	inpMap[c.thisX][c.thisY] = "*"
+func returner(c cell, closedList []cell, inpMap [][]string, q queue) {
+	inpMap[c.thisX][c.thisY] = q.takeNext()
 	if c.parent != -1 {
-		returner(closedList[c.parent], closedList, inpMap)
+		returner(closedList[c.parent], closedList, inpMap, q)
 		return
 	}
 	showPath(inpMap)
@@ -81,8 +111,9 @@ func pathFinder(inpMap [][]string, startX, startY, aimX, aimY int) bool {
 			return false
 		}
 		if checkIfSuccess(selected.thisX, selected.thisY, aimX, aimY) {
-			inpMap[aimX][aimY] = "*"
-			returner(selected, closedList, inpMap)
+			inpMap[aimX][aimY] = "0"
+			q := queueGenerate()
+			returner(selected, closedList, inpMap, q)
 			return true
 		}
 		openList = deleteCellFromSlice(openList, findIndexOfCell(selected, openList))
@@ -99,11 +130,9 @@ func pathFinder(inpMap [][]string, startX, startY, aimX, aimY int) bool {
 			}
 		}
 	}
-	//return openList,closedList, "HORRAY"
 }
 func findIndexOfCell(c cell, cArr []cell) int {
 	for i := range cArr {
-		//if c == cArr[i] {
 		if c.thisX == cArr[i].thisX && c.thisY == cArr[i].thisY {
 			return i
 		}
@@ -192,6 +221,7 @@ func readPathFromFile(filename string) [][]string {
 }
 
 func showPath(inpMap [][]string) {
+	fmt.Println(">>")
 	for i := range inpMap {
 		for j := range inpMap[i] {
 			fmt.Printf("%2s", inpMap[i][j])
