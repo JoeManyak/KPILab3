@@ -8,6 +8,8 @@ import (
 	"strings"
 )
 
+const e = 5
+
 type cell struct {
 	thisX       int
 	thisY       int
@@ -67,7 +69,7 @@ func toSquare(a int) int {
 
 func (c *cell) calculateTotalCost(aimX, aimY int) {
 	costToAim := math.Sqrt(float64(toSquare(aimX-c.thisX) + toSquare(aimY-c.thisY)))
-	c.fullCost = c.roadCost + costToAim*5
+	c.fullCost = c.roadCost + costToAim*e
 }
 
 func (c *cell) roadCostCalculate() {
@@ -118,7 +120,8 @@ func pathFinder(inpMap [][]string, startX, startY, aimX, aimY int) bool {
 		}
 		openList = deleteCellFromSlice(openList, findIndexOfCell(selected, openList))
 		closedList = append(closedList, selected)
-		for _, v := range getNotClosedNeighbors(closedList[len(closedList)-1], closedList, openList, inpMap, aimX, aimY) {
+		for _, v := range getNotClosedNeighbors(closedList[len(closedList)-1],
+			closedList, openList, inpMap, aimX, aimY) {
 			temp := math.Sqrt(float64(toSquare(v.thisX-c.thisX) + toSquare(v.thisY-c.thisY)))
 			if findIndexOfCell(v, openList) == -1 || temp < v.roadCost {
 				v.parent = len(closedList) - 1
@@ -131,6 +134,7 @@ func pathFinder(inpMap [][]string, startX, startY, aimX, aimY int) bool {
 		}
 	}
 }
+
 func findIndexOfCell(c cell, cArr []cell) int {
 	for i := range cArr {
 		if c.thisX == cArr[i].thisX && c.thisY == cArr[i].thisY {
