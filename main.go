@@ -8,17 +8,16 @@ import (
 	"strings"
 )
 
-const e = 5
+const e = 2
 
 type cell struct {
-	thisX       int
-	thisY       int
-	parentX     int
-	parentY     int
-	parent      int
-	parentsCost float64
-	fullCost    float64
-	roadCost    float64
+	thisX    int
+	thisY    int
+	parentX  int
+	parentY  int
+	parent   int
+	fullCost float64
+	roadCost float64
 }
 
 type queue struct {
@@ -72,9 +71,14 @@ func (c *cell) calculateTotalCost(aimX, aimY int) {
 	c.fullCost = c.roadCost + costToAim*e
 }
 
-func (c *cell) roadCostCalculate() {
+func (c *cell) roadCostCalculate(closedList []cell) {
 	costToNeighbor := math.Sqrt(float64(toSquare(c.parentX-c.thisX) + toSquare(c.parentY-c.thisY)))
-	c.roadCost = costToNeighbor + c.parentsCost
+	c.roadCost = costToNeighbor + closedList[c.parent].roadCost
+	/*if c.thisX == 2 && c.thisY == 5 || c.thisX == 1 && c.thisY == 6{
+		fmt.Println(c.roadCost)
+		sh(closedList)
+	}*/
+	//fmt.Printf("%2d %2d cost: %4f  %2d %2d parentCost: %4f toNeighbor: %4f; \n",c.thisX,c.thisY,c.roadCost,c.parentX,c.parentY,closedList[c.parent].roadCost,costToNeighbor)
 }
 
 func returner(c cell, closedList []cell, inpMap [][]string, q queue) {
@@ -94,8 +98,8 @@ func initCell(x, y int) cell {
 	c.parentX = -1
 	c.parentY = -1
 	c.parent = -1
-	c.parentsCost = 0
 	c.fullCost = 0
+	c.roadCost = 0
 	return c
 }
 
@@ -103,10 +107,10 @@ func initCell(x, y int) cell {
 // x2,y2 — end of path
 
 func pathFinder(inpMap [][]string, startX, startY, aimX, aimY int) bool {
-	c := initCell(startX, startY)
+	startCell := initCell(startX, startY)
 	openList := make([]cell, 0, 0)
 	closedList := make([]cell, 0, 0)
-	openList = append(openList, c)
+	openList = append(openList, startCell)
 	for {
 		selected, b := getCheapestCell(openList)
 		if b {
@@ -122,19 +126,21 @@ func pathFinder(inpMap [][]string, startX, startY, aimX, aimY int) bool {
 		closedList = append(closedList, selected)
 		for _, v := range getNotClosedNeighbors(closedList[len(closedList)-1],
 			closedList, openList, inpMap, aimX, aimY) {
-			temp := math.Sqrt(float64(toSquare(v.thisX-c.thisX) + toSquare(v.thisY-c.thisY)))
-			if findIndexOfCell(v, openList) == -1 || temp < v.roadCost {
+			i := findIndexOfCell(v, openList)
+			if i == -1 {
 				v.parent = len(closedList) - 1
-				v.roadCost = temp
 				v.calculateTotalCost(aimX, aimY)
-				if findIndexOfCell(v, openList) == -1 {
-					openList = append(openList, v)
+				openList = append(openList, v)
+			} else {
+				temp := math.Sqrt(float64(toSquare(v.thisX-selected.thisX)+toSquare(v.thisY-selected.thisY))) + selected.roadCost
+				if temp < openList[i].roadCost {
+					openList[i].roadCost = temp
+					openList[i].parent = len(closedList) - 1
 				}
 			}
 		}
 	}
 }
-
 func findIndexOfCell(c cell, cArr []cell) int {
 	for i := range cArr {
 		if c.thisX == cArr[i].thisX && c.thisY == cArr[i].thisY {
@@ -176,14 +182,13 @@ func getNotClosedNeighbors(c cell, closedList, openList []cell, initMap [][]stri
 				}
 				if b {
 					cellArr = append(cellArr, cell{
-						thisX:       i,
-						thisY:       j,
-						parentX:     c.thisX,
-						parentY:     c.thisY,
-						parent:      len(closedList) - 1,
-						parentsCost: c.fullCost,
+						thisX:   i,
+						thisY:   j,
+						parentX: c.thisX,
+						parentY: c.thisY,
+						parent:  len(closedList) - 1,
 					})
-					cellArr[len(cellArr)-1].roadCostCalculate()
+					cellArr[len(cellArr)-1].roadCostCalculate(closedList)
 					cellArr[len(cellArr)-1].calculateTotalCost(aimX, aimY)
 				}
 			}
