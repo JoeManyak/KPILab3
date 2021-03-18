@@ -21,20 +21,41 @@ type cell struct {
 }
 
 type queue struct {
-	el []string
+	el    []string
+	First int `default:"1"`
+	Last  int `default:"0"`
 }
 
 func (q *queue) addOne(str string) {
-	temp := make([]string, len(q.el)+1, len(q.el)+1)
-	temp[0] = str
-	copy(temp[1:], q.el[0:])
-	q.el = temp
+	length := len(q.el)
+	if q.First >= length {
+		temp := make([]string, length*2+1, length*2+1)
+		copy(temp[0:length-q.Last], q.el[q.Last:length])
+		q.Last = 0
+		q.First = length - q.Last
+		temp[q.First] = str
+		q.el = temp
+		q.First++
+	} else {
+		q.el[q.First] = str
+		q.First++
+	}
 }
 
 func (q *queue) takeNext() string {
-	str := q.el[len(q.el)-1]
-	q.el = q.el[:len(q.el)-1]
-	return str
+	if q.Last != q.First {
+		q.Last++
+		return q.el[q.Last-1]
+	}
+	return ""
+}
+
+func (q *queue) optimize() {
+	length := len(q.el)
+	temp := make([]string, length, length)
+	copy(temp[0:length-q.Last], q.el[q.Last:length])
+	q.First = q.First - q.Last
+	q.Last = 0
 }
 
 func main() {
@@ -74,11 +95,6 @@ func (c *cell) calculateTotalCost(aimX, aimY int) {
 func (c *cell) roadCostCalculate(closedList []cell) {
 	costToNeighbor := math.Sqrt(float64(toSquare(c.parentX-c.thisX) + toSquare(c.parentY-c.thisY)))
 	c.roadCost = costToNeighbor + closedList[c.parent].roadCost
-	/*if c.thisX == 2 && c.thisY == 5 || c.thisX == 1 && c.thisY == 6{
-		fmt.Println(c.roadCost)
-		sh(closedList)
-	}*/
-	//fmt.Printf("%2d %2d cost: %4f  %2d %2d parentCost: %4f toNeighbor: %4f; \n",c.thisX,c.thisY,c.roadCost,c.parentX,c.parentY,closedList[c.parent].roadCost,costToNeighbor)
 }
 
 func returner(c cell, closedList []cell, inpMap [][]string, q queue) {
