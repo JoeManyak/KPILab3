@@ -13,8 +13,6 @@ const e = 2
 type cell struct {
 	thisX    int
 	thisY    int
-	parentX  int
-	parentY  int
 	parent   int
 	fullCost float64
 	roadCost float64
@@ -93,7 +91,8 @@ func (c *cell) calculateTotalCost(aimX, aimY int) {
 }
 
 func (c *cell) roadCostCalculate(closedList []cell) {
-	costToNeighbor := math.Sqrt(float64(toSquare(c.parentX-c.thisX) + toSquare(c.parentY-c.thisY)))
+	costToNeighbor := math.Sqrt(float64(toSquare(closedList[c.parent].thisX-c.thisX) +
+		toSquare(closedList[c.parent].thisX-c.thisY)))
 	c.roadCost = costToNeighbor + closedList[c.parent].roadCost
 }
 
@@ -111,8 +110,6 @@ func initCell(x, y int) cell {
 	var c cell
 	c.thisX = x
 	c.thisY = y
-	c.parentX = -1
-	c.parentY = -1
 	c.parent = -1
 	c.fullCost = 0
 	c.roadCost = 0
@@ -198,11 +195,9 @@ func getNotClosedNeighbors(c cell, closedList, openList []cell, initMap [][]stri
 				}
 				if b {
 					cellArr = append(cellArr, cell{
-						thisX:   i,
-						thisY:   j,
-						parentX: c.thisX,
-						parentY: c.thisY,
-						parent:  len(closedList) - 1,
+						thisX:  i,
+						thisY:  j,
+						parent: len(closedList) - 1,
 					})
 					cellArr[len(cellArr)-1].roadCostCalculate(closedList)
 					cellArr[len(cellArr)-1].calculateTotalCost(aimX, aimY)
